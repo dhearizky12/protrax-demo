@@ -1,0 +1,1083 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Protrax Warehouse Demo</title>
+<style>
+  :root {
+    --bg: #f4f5f7; --card: #ffffff; --text: #1f2328; --muted: #6b7280; --line: #dde1e6;
+    --header: #5f6b78; --accent: #198754; --accent-dark: #146c43; --dark: #212529; --grey: #6c757d;
+    --danger: #b42318; --danger-bg: #fdecea; --warn: #8a5a00; --warn-bg: #fff4d6; --ok: #146c43; --ok-bg: #e6f4ea;
+    --info: #0b5cad; --info-bg: #e7f0fb; --highlight: #ffe58a;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: "Segoe UI", system-ui, -apple-system, sans-serif; font-size: 14px; color: var(--text); background: var(--bg); }
+  header { background: var(--header); color: #fff; padding: 10px 20px; display: flex; align-items: center; gap: 16px; border-bottom: 3px solid #7fc8a9; }
+  header .menu { background: rgba(255,255,255,.2); border-radius: 4px; padding: 5px 12px; font-size: 13px; }
+  header h1 { margin: 0; font-size: 22px; font-weight: 400; letter-spacing: .5px; }
+  header h1 b { font-weight: 800; }
+  main { max-width: 1180px; margin: 0 auto; padding: 16px 20px 40px; }
+  .topbar { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .crumb a { color: #0d6efd; text-decoration: none; }
+  .tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--line); margin: 14px 0 16px; }
+  .tab { padding: 9px 16px; cursor: pointer; color: #0d6efd; border: 1px solid transparent; border-bottom: 0; border-radius: 6px 6px 0 0; background: none; font: inherit; }
+  .tab.active { color: var(--text); background: var(--card); border-color: var(--line); margin-bottom: -1px; }
+  .grid { display: grid; grid-template-columns: 380px 1fr; gap: 18px; align-items: start; }
+  @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 6px; padding: 14px; }
+  fieldset { border: 1px solid var(--line); border-radius: 6px; margin: 0 0 14px; padding: 6px 14px 14px; }
+  legend { font-size: 20px; padding: 0 6px; }
+  .row { display: grid; grid-template-columns: 120px 1fr; gap: 10px; align-items: center; margin-top: 10px; }
+  .row label { color: var(--text); }
+  input, select, textarea { width: 100%; padding: 7px 10px; border: 1px solid #ced4da; border-radius: 4px; font: inherit; background: #fff; }
+  input[readonly] { background: #e9ecef; }
+  input:focus, select:focus { outline: 2px solid #9ec5fe; border-color: #86b7fe; }
+  .inline { display: flex; gap: 6px; }
+  button { font: inherit; cursor: pointer; border-radius: 4px; border: 1px solid transparent; padding: 7px 14px; }
+  button:disabled { opacity: .55; cursor: not-allowed; }
+  .btn-dark { background: var(--dark); color: #fff; }
+  .btn-grey { background: var(--grey); color: #fff; }
+  .btn-green { background: var(--accent); color: #fff; }
+  .btn-green:hover:not(:disabled) { background: var(--accent-dark); }
+  .btn-light { background: #fff; border-color: #ced4da; color: var(--text); }
+  .btn-link { background: none; color: var(--danger); padding: 2px 6px; }
+  .actions { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+  .actions button { padding: 12px 10px; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 12px; font-weight: 600; }
+  .b-ok { background: var(--accent); color: #fff; }
+  .b-off { background: var(--grey); color: #fff; }
+  .b-draft { background: var(--grey); color: #fff; vertical-align: middle; }
+  .b-sent { background: var(--accent); color: #fff; vertical-align: middle; }
+  .b-fail { background: var(--danger); color: #fff; vertical-align: middle; }
+  .hint { color: var(--muted); font-size: 12.5px; margin-top: 6px; }
+  .field-status { font-size: 12.5px; margin-top: 4px; min-height: 16px; }
+  .s-ok { color: var(--ok); } .s-err { color: var(--danger); } .s-warn { color: var(--warn); } .s-info { color: var(--info); }
+  h2 { font-size: 22px; font-weight: 400; margin: 18px 0 8px; }
+  table { width: 100%; border-collapse: collapse; }
+  th { text-align: left; border-bottom: 2px solid var(--line); padding: 8px 6px; font-weight: 600; white-space: nowrap; }
+  td { border-bottom: 1px solid var(--line); padding: 8px 6px; vertical-align: top; }
+  td.num, th.num { text-align: right; }
+  td.mono { font-family: Consolas, "Courier New", monospace; }
+  tr.r-error td { background: var(--danger-bg); }
+  tr.r-warn td { background: var(--warn-bg); }
+  .row-msg { font-size: 12px; margin-top: 3px; }
+  .add-row { display: grid; grid-template-columns: 1.1fr 1.1fr .6fr 1.4fr auto; gap: 8px; margin-top: 12px; }
+  @media (max-width: 700px) { .add-row { grid-template-columns: 1fr 1fr; } }
+  .summary { margin-top: 10px; color: var(--text); }
+  .result { margin-top: 14px; border-radius: 6px; padding: 12px 14px; display: none; white-space: pre-wrap; }
+  .result.ok { display: block; background: var(--ok-bg); border: 1px solid #a3cfbb; }
+  .result.err { display: block; background: var(--danger-bg); border: 1px solid #f1aeb5; }
+  .log { margin-top: 18px; }
+  .log-head { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .log-head h3 { margin: 0; font-size: 18px; font-weight: 400; }
+  .log-list { margin-top: 10px; max-height: 360px; overflow: auto; }
+  details.entry { border-top: 1px solid var(--line); padding: 7px 2px; }
+  details.entry summary { cursor: pointer; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  .method { font-weight: 700; font-size: 12px; }
+  .url { font-family: Consolas, monospace; font-size: 12.5px; word-break: break-all; }
+  pre { background: #f6f8fa; border: 1px solid var(--line); border-radius: 4px; padding: 10px; overflow: auto; max-height: 300px; font-size: 12.5px; margin: 6px 0; }
+  .modal-bg { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; align-items: center; justify-content: center; padding: 16px; z-index: 10; }
+  .modal-bg.open { display: flex; }
+  .modal { background: #fff; border-radius: 8px; width: min(720px, 100%); max-height: 90vh; overflow: auto; padding: 16px; }
+  .modal-head { display: flex; justify-content: space-between; align-items: center; }
+  .demo-banner { position: fixed; left: 50%; bottom: 20px; transform: translateX(-50%); background: var(--dark); color: #fff; padding: 10px 18px; border-radius: 24px; display: none; z-index: 9; box-shadow: 0 4px 14px rgba(0,0,0,.25); max-width: calc(100% - 32px); }
+  .demo-banner.open { display: block; }
+  .spot { animation: spot 1.2s ease-in-out 2; border-radius: 6px; }
+  @keyframes spot { 50% { box-shadow: 0 0 0 4px var(--highlight); } }
+</style>
+</head>
+<body>
+<header>
+  <span class="menu">Menu</span>
+  <h1><b>PROTRAX</b> Warehouse</h1>
+</header>
+
+<main>
+  <div class="topbar">
+    <div class="crumb"><a href="#">Home</a> / Warehouse : <span id="crumbAction">Move Out</span></div>
+    <div class="inline">
+      <button class="btn-dark" id="btnPlayDemo">&#9654; Putar Demo</button>
+      <button class="btn-light" id="btnReset">Reset</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-action="MoveOut">Move Out</button>
+    <button class="tab" data-action="MoveIn">Move In</button>
+  </div>
+
+  <div class="grid">
+    <!-- left -->
+    <div class="card">
+      <fieldset id="boxConnection">
+        <legend>Koneksi TIGA</legend>
+        <div class="row"><label>Kirim ke</label><input id="tigaUrl" readonly></div>
+        <div class="row"><span></span><div><span class="badge b-off" id="connBadge">Belum login</span></div></div>
+        <div class="row"><label>API Version</label><input id="apiVersion" readonly placeholder="terdeteksi otomatis setelah login"></div>
+
+        <div id="loginForm">
+          <div class="row"><label for="username">Username</label><input id="username" autocomplete="username" placeholder="email TIGA"></div>
+          <div class="row"><label for="password">Password</label><input id="password" type="password" autocomplete="current-password"></div>
+          <div class="row"><span></span><button class="btn-dark" id="btnLogin">Login</button></div>
+        </div>
+        <div id="sessionBox" style="display:none">
+          <div class="row"><label>Session</label><div class="inline"><input id="sessionUser" readonly><button class="btn-dark" id="btnLogout">Logout</button></div></div>
+        </div>
+        <div class="hint">Login lewat <code>SecurityManager/GetAuthorization</code>. Cookie Tiga disimpan di server demo (seperti backend Protrax), bukan di browser. Password tidak disimpan.</div>
+      </fieldset>
+
+      <fieldset id="boxTransaction">
+        <legend id="legendAction">Move Out</legend>
+        <div class="row"><label for="shipmentHeader">Shipment Header</label><input id="shipmentHeader" placeholder="mis. PTX-SHP-20261105-01"></div>
+        <div class="row"><label for="companyId">Company ID</label>
+          <div><input id="companyId" placeholder="mis. PSL"><div class="field-status" id="companyStatus"></div></div></div>
+        <div class="row"><label for="warehouseName">Warehouse</label>
+          <div><input id="warehouseName" placeholder="nama warehouse di TIGA"><div class="field-status" id="warehouseStatus"></div></div></div>
+        <div class="row"><label>Jenis Transaksi</label><input id="transactionType" readonly></div>
+        <div class="row"><label for="notes">Notes</label><div><input id="notes" placeholder="opsional"><div class="field-status s-info" id="notesHint"></div></div></div>
+        <div class="row"><label>Jumlah Item</label><input id="itemCount" readonly></div>
+        <div class="row"><label>Status</label><input id="statusText" readonly></div>
+      </fieldset>
+    </div>
+
+    <!-- right -->
+    <div class="card">
+      <div class="actions">
+        <button class="btn-grey" id="btnSwitchTab"></button>
+        <button class="btn-dark" id="btnPayload">Lihat Payload</button>
+        <button class="btn-green" id="btnSubmit"></button>
+      </div>
+
+      <h2>Summary Item <span class="badge b-draft" id="statusBadge">DRAFT</span></h2>
+      <table>
+        <thead><tr><th>No</th><th>Item ID</th><th>Description</th><th>Bin</th><th class="num">Stok Bin</th><th class="num" id="thQty">Qty Keluar</th><th>UoM</th><th></th></tr></thead>
+        <tbody id="itemRows"><tr><td colspan="8" class="hint">Belum ada item. Tambahkan di bawah.</td></tr></tbody>
+      </table>
+
+      <div class="add-row" id="boxAddRow">
+        <input id="newItemId" placeholder="Item ID" list="itemHintList"><datalist id="itemHintList"></datalist>
+        <input id="newBin" placeholder="Bin">
+        <input id="newQty" type="number" min="0" step="any" placeholder="Qty">
+        <input id="newNote" placeholder="Adjustment Notes (opsional)">
+        <button class="btn-dark" id="btnAddRow">+ Tambah</button>
+      </div>
+      <div class="field-status" id="addStatus"></div>
+      <div class="summary" id="summaryText">0 item &middot; total qty 0</div>
+      <div class="inline" style="margin-top:8px"><button class="btn-light" id="btnValidate">Cek semua item ke TIGA</button></div>
+
+      <div class="result" id="resultBox"></div>
+    </div>
+  </div>
+
+  <div class="card log">
+    <div class="log-head">
+      <h3>API Log ke TIGA</h3>
+      <span class="hint" id="logHint">Data asli dari TIGA lewat API. Submit benar-benar membuat transaksi di TIGA.</span>
+    </div>
+    <div class="log-list" id="logList"></div>
+  </div>
+</main>
+
+<div class="modal-bg" id="payloadModal">
+  <div class="modal">
+    <div class="modal-head"><b id="payloadTitle">Payload</b><div class="inline"><button class="btn-light" id="btnCopyPayload">Copy</button><button class="btn-dark" id="btnClosePayload">Tutup</button></div></div>
+    <pre id="payloadText"></pre>
+  </div>
+</div>
+
+<div class="demo-banner" id="demoBanner"></div>
+
+<script>
+( function ()
+{
+  'use strict';
+
+  // ---------- config ( all TIGA names in one place ) ----------
+  const CONFIG = {
+    PackageName : 'Bonded Zone',
+    ChunkSize : 500, // max "x or x or x" per retrieve
+    PageSize : 500,
+    Action : {
+      MoveIn : { ApiAction : 'MoveIn', Label : 'Move In', TransactionType : 'Adjustment - Move In', QtyLabel : 'Qty Masuk', SubmitLabel : '&#10148; Submit Move In ke TIGA' },
+      MoveOut : { ApiAction : 'MoveOut', Label : 'Move Out', TransactionType : 'Adjustment - Move Out', QtyLabel : 'Qty Keluar', SubmitLabel : '&#10148; Submit Move Out ke TIGA' }
+    },
+    ExternalApiPath : '/EntityManager/ExternalAPI/',
+    RetrievePath : '/EntityManager/RetrieveExtendedBusinessEntity',
+    PurchaseTypeService : 'Service',
+    Entity : {
+      Companies : { Name : 'Companies', Fields : { ID : 'ID', Name : 'Name' } },
+      Warehouses : { Name : 'Warehouses', Fields : { Name : 'Name', CompanyID : 'Companies.ID.60f42431-a2da-43ae-bc1f-a6c60142681a' } },
+      Items : { Name : 'Items', Fields : { ItemID : 'ItemID', Description : 'ItemDescription', PurchaseType : 'ItemCategories.PurchaseType.aa6518f5-2fdd-4c5c-b554-a45300d91564', UoM : 'UoM.Name.fc4f3f8f-cbf1-4076-9bfc-a43b00ecde54' } },
+      Storages : { Name : 'Storages', Fields : { Name : 'Name', WarehouseName : 'Warehouses.Name.7ce29cd8-5019-47a9-a1a5-a45a005ade3c' } },
+      StorageInventories : { Name : 'StorageInventories', Fields : {
+        ItemID : 'Items.ItemID.e5453f74-0ae9-42de-bdf6-a43b00ed54bf.9419e313-fe7a-4188-8e78-a47d010262cf',
+        WarehouseName : 'Warehouses.Name.46af7515-f2a5-4f28-bd90-a43b00f3f27c.9419e313-fe7a-4188-8e78-a47d010262cf',
+        StorageName : 'Storages.Name.8331ae34-ddf0-4322-9e10-a47d01016fcb',
+        Quantity : 'Quantity'
+      } }
+    },
+    DemoStepDelayMs : 1400
+  };
+
+  // ---------- state ----------
+  let _state = {
+    Action : 'MoveOut',
+    Session : { IsLoggedIn : false },
+    Warehouse : null, // { ID, Name }
+    RowsByAction : { MoveOut : [], MoveIn : [] },
+    StatusByAction : { MoveOut : 'DRAFT', MoveIn : 'DRAFT' },
+    MoveOutNotes : '',
+    // each tab has its own warehouse : Move In can receive into another warehouse ( default = the Move Out warehouse )
+    WarehouseNameByAction : { MoveOut : '', MoveIn : '' }
+  };
+
+  // Rows / Status always point to the active tab
+  Object.defineProperty( _state, 'Rows', {
+    get : function () { return _state.RowsByAction[ _state.Action ]; },
+    set : function ( rows ) { _state.RowsByAction[ _state.Action ] = rows; }
+  } );
+  Object.defineProperty( _state, 'Status', {
+    get : function () { return _state.StatusByAction[ _state.Action ]; },
+    set : function ( status ) { _state.StatusByAction[ _state.Action ] = status; }
+  } );
+
+  // Move In can only receive the items that were moved out
+  function GetMoveOutItemIds()
+  {
+    return Unique( _state.RowsByAction.MoveOut.map( function ( row ) { return row.ItemID; } ) );
+  }
+
+  const $ = function ( id ) { return document.getElementById( id ); };
+
+  // ---------- helpers ----------
+  function NormalizeFieldName( fieldName )
+  {
+    return fieldName.replace( /\$/g, '$dollar$' ).replace( /#/g, '$hash$' ).replace( /-/g, '$dash$' ).replace( /\./g, '$dot$' ).replace( /\*/g, '$star$' ).replace( / /g, '$space$' );
+  }
+
+  // TIGA can send properties as an object or as [ { Key, Value } ], and a value can be wrapped in { Value }
+  function ReadProperty( entity, fieldName )
+  {
+    let properties = entity.PropertiesWrapper || entity.Properties || {};
+
+    if( Array.isArray( properties ) )
+    {
+      let map = {};
+      properties.forEach( function ( pair ) { map[ pair.Key ] = pair.Value; } );
+      properties = map;
+    }
+
+    const alias = entity.__AliasMap && entity.__AliasMap[ fieldName ];
+    const keys = [ fieldName, NormalizeFieldName( fieldName ) ].concat( alias ? [ alias ] : [] );
+    for( let i = 0; i < keys.length; i++ )
+    {
+      if( Object.prototype.hasOwnProperty.call( properties, keys[i] ) )
+      {
+        const value = properties[ keys[i] ];
+        return ( value && typeof value === 'object' && 'Value' in value ) ? value.Value : value;
+      }
+    }
+
+    return entity[ fieldName ];
+  }
+
+  function Quote( value )
+  {
+    return '"' + String( value ).replace( /"/g, '' ) + '"';
+  }
+
+  // same style as the TIGA client ( BulkConfirmCtrl ) : field path NOT quoted, value quoted.
+  // a quoted multi-level path ( Warehouses.S#ID.<rel>.<rel> ) fails with "The given key 'Warehouses' was not present in the dictionary"
+  function FieldIs( fieldName, value )
+  {
+    return fieldName + ' is ' + Quote( value );
+  }
+
+  function Chunk( list, size )
+  {
+    let chunks = [];
+    for( let i = 0; i < list.length; i += size )
+    {
+      chunks.push( list.slice( i, i + size ) );
+    }
+    return chunks;
+  }
+
+  function Unique( list )
+  {
+    return list.filter( function ( value, index ) { return list.indexOf( value ) === index; } );
+  }
+
+  function Sleep( ms )
+  {
+    return new Promise( function ( resolve ) { setTimeout( resolve, ms ); } );
+  }
+
+  function SetFieldStatus( elementId, kind, text )
+  {
+    const element = $( elementId );
+    element.className = 'field-status' + ( kind ? ' s-' + kind : '' );
+    element.textContent = text || '';
+  }
+
+  function ParseJson( text )
+  {
+    try { return JSON.parse( text ); } catch( error ) { return null; }
+  }
+
+  function GetReason( body, status )
+  {
+    const parsed = typeof body === 'string' ? ParseJson( body ) : body;
+    if( parsed && parsed.Reason ) return parsed.Reason;
+    if( parsed && parsed.Message ) return parsed.Message;
+    return ( typeof body === 'string' && body ) ? body : ( 'HTTP ' + status );
+  }
+
+  // ---------- API log ----------
+  function AddLog( label, method, url, status, elapsedMs, requestBody, responseBody )
+  {
+    const entry = document.createElement( 'details' );
+    entry.className = 'entry';
+
+    const summary = document.createElement( 'summary' );
+    const isOk = status >= 200 && status < 300;
+
+    const badge = document.createElement( 'span' );
+    badge.className = 'badge ' + ( isOk ? 'b-ok' : 'b-fail' );
+    badge.textContent = status || 'ERR';
+
+    const methodText = document.createElement( 'span' );
+    methodText.className = 'method';
+    methodText.textContent = method;
+
+    const urlText = document.createElement( 'span' );
+    urlText.className = 'url';
+    urlText.textContent = url;
+
+    const meta = document.createElement( 'span' );
+    meta.className = 'hint';
+    meta.style.margin = '0';
+    meta.textContent = label + ' · ' + ( elapsedMs != null ? elapsedMs + ' ms · ' : '' ) + new Date().toLocaleTimeString();
+
+    summary.append( badge, methodText, urlText, meta );
+
+    const requestPre = document.createElement( 'pre' );
+    requestPre.textContent = 'Request :\n' + Pretty( requestBody );
+    const responsePre = document.createElement( 'pre' );
+    responsePre.textContent = 'Response :\n' + Pretty( responseBody );
+
+    entry.append( summary, requestPre, responsePre );
+    $( 'logList' ).prepend( entry );
+  }
+
+  function Pretty( value )
+  {
+    if( value == null || value === '' ) return '( kosong )';
+    const parsed = typeof value === 'string' ? ParseJson( value ) : value;
+    return parsed != null ? JSON.stringify( parsed, null, 2 ) : String( value );
+  }
+
+  // ---------- server calls ----------
+  async function PostJson( url, body )
+  {
+    const response = await fetch( url, { method : 'POST', headers : { 'Content-Type' : 'application/json' }, body : JSON.stringify( body || {} ) } );
+    const text = await response.text();
+    return { HttpStatus : response.status, Data : ParseJson( text ) || { Reason : text } };
+  }
+
+  // forward to TIGA through the demo server, returns the parsed TIGA body or throws the TIGA reason
+  async function CallTiga( label, tigaPath, body, query )
+  {
+    // ExternalAPI is called on the demo server with the same path as TIGA ( http://localhost:7500/EntityManager/ExternalAPI/<Action> )
+    const localPrefix = tigaPath.indexOf( CONFIG.ExternalApiPath ) === 0 ? '' : '/tiga';
+    const result = await PostJson( localPrefix + tigaPath + ( query || '' ), body );
+    const data = result.Data;
+
+    if( result.HttpStatus !== 200 )
+    {
+      AddLog( label, 'POST', tigaPath, result.HttpStatus, null, body, data );
+      if( result.HttpStatus === 401 ) SetSession( { IsLoggedIn : false } );
+      throw new Error( data.Reason || ( 'HTTP ' + result.HttpStatus ) );
+    }
+
+    AddLog( label, 'POST', data.Url, data.Status, data.ElapsedMs, body, data.Body );
+
+    if( data.Status !== 200 )
+    {
+      throw new Error( GetReason( data.Body, data.Status ) );
+    }
+
+    return ParseJson( data.Body );
+  }
+
+  async function Retrieve( label, entityName, filterString, fields )
+  {
+    // a related field used in the filter must also be in propertyDefinitionMap, otherwise TIGA does not join that entity
+    // and fails with "The given key 'Warehouses' was not present in the dictionary" ( same as WarehouseManagementAdjustmentToolCtrl )
+    const relatedFieldsInFilter = ( filterString || '' ).match( /[A-Za-z]+\.[A-Za-z#$]+(\.[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})+/g ) || [];
+    fields = Unique( fields.concat( relatedFieldsInFilter ) );
+
+    // Key = short alias ( no dots ), Value = field path : same as the TIGA client
+    let aliasMap = {};
+    fields.forEach( function ( field, index ) { aliasMap[ field ] = 'Field' + index; } );
+
+    const body = {
+      packageDefinitionName : CONFIG.PackageName,
+      entityDefinitionName : entityName,
+      shouldCountOnly : false,
+      filterString : filterString,
+      propertyDefinitionMap : fields.map( function ( field ) { return { Key : aliasMap[ field ], Value : field }; } ),
+      pageIndex : 0,
+      pageSize : CONFIG.PageSize,
+      sortMap : []
+    };
+    const query = '?P=' + encodeURIComponent( CONFIG.PackageName ) + '&E=' + encodeURIComponent( entityName );
+    const result = await CallTiga( label, CONFIG.RetrievePath, body, query );
+
+    // WCF wraps the result : { RetrieveExtendedBusinessEntityResult : { Items : [ ... ] } }
+    let inner = result;
+    if( inner && !inner.Items ) { for( const key in inner ) { inner = inner[ key ]; break; } }
+    const entities = ( inner && inner.Items ) ? inner.Items : [];
+    entities.forEach( function ( entity ) { entity.__AliasMap = aliasMap; } );
+    return entities;
+  }
+
+  // one search for many values, chunked so one filter never has more than CONFIG.ChunkSize "or"
+  async function RetrieveChunked( label, entityName, baseFilter, orFilters, fields )
+  {
+    let entities = [];
+    const chunks = Chunk( orFilters, CONFIG.ChunkSize );
+
+    for( let i = 0; i < chunks.length; i++ )
+    {
+      const chunkFilter = '(' + chunks[i].join( ' or ' ) + ')';
+      const filter = baseFilter ? baseFilter + ' and ' + chunkFilter : chunkFilter;
+      entities = entities.concat( await Retrieve( label + ( chunks.length > 1 ? ' ' + ( i + 1 ) + '/' + chunks.length : '' ), entityName, filter, fields ) );
+    }
+
+    return entities;
+  }
+
+  // ---------- session ----------
+  function SetSession( session )
+  {
+    _state.Session = Object.assign( {}, _state.Session, session );
+    const isLoggedIn = !!_state.Session.IsLoggedIn;
+
+    $( 'connBadge' ).className = 'badge ' + ( isLoggedIn ? 'b-ok' : 'b-off' );
+    $( 'connBadge' ).textContent = isLoggedIn ? 'Terhubung ke ' + ( _state.Session.TigaBaseUrl || '' ) : 'Belum login';
+    $( 'apiVersion' ).value = _state.Session.ApiVersion || '';
+    $( 'loginForm' ).style.display = isLoggedIn ? 'none' : '';
+    $( 'sessionBox' ).style.display = isLoggedIn ? '' : 'none';
+    $( 'sessionUser' ).value = _state.Session.Username || '';
+    if( _state.Session.TigaBaseUrl ) $( 'tigaUrl' ).value = 'TIGA sungguhan · ' + _state.Session.TigaBaseUrl;
+    RefreshButtons();
+  }
+
+  async function Login()
+  {
+    const username = $( 'username' ).value.trim();
+    const password = $( 'password' ).value;
+
+    if( !username || !password )
+    {
+      alert( 'Isi username dan password TIGA dulu.' );
+      return;
+    }
+
+    $( 'btnLogin' ).disabled = true;
+    try
+    {
+      const result = await PostJson( '/api/login', { Username : username, Password : password } );
+      const tiga = result.Data.Tiga || {};
+      AddLog( 'Login', 'POST', tiga.Url || '/SecurityManager/GetAuthorization', tiga.Status || result.HttpStatus, tiga.ElapsedMs,
+        { userTimeZone : '+0700', user : { Username : username, Password : '******' }, signedInWithGoogle : false }, tiga.Body || result.Data );
+
+      if( result.HttpStatus !== 200 )
+      {
+        alert( 'Login gagal : ' + ( result.Data.Reason || GetReason( tiga.Body, tiga.Status || result.HttpStatus ) ) );
+        return;
+      }
+
+      $( 'password' ).value = '';
+      SetSession( result.Data.Session );
+      if( $( 'companyId' ).value.trim() ) await ValidateCompany();
+      if( $( 'companyId' ).value.trim() && $( 'warehouseName' ).value.trim() ) await ValidateWarehouse();
+    }
+    finally
+    {
+      $( 'btnLogin' ).disabled = false;
+    }
+  }
+
+  async function Logout()
+  {
+    const result = await PostJson( '/api/logout' );
+    SetSession( result.Data );
+  }
+
+  // ---------- company ----------
+  // Companies table : ID is "<company id>"
+  async function ValidateCompany()
+  {
+    const companyId = $( 'companyId' ).value.trim();
+
+    if( !companyId )
+    {
+      SetFieldStatus( 'companyStatus', 'err', 'Company ID wajib diisi' );
+      return false;
+    }
+
+    if( !_state.Session.IsLoggedIn ) return false;
+
+    const fields = CONFIG.Entity.Companies.Fields;
+    try
+    {
+      const companies = await Retrieve( 'Cek company', CONFIG.Entity.Companies.Name, FieldIs( fields.ID, companyId ), [ fields.ID, fields.Name ] );
+
+      if( companies.length !== 1 )
+      {
+        SetFieldStatus( 'companyStatus', 'err', companies.length ? 'Ada lebih dari satu company dengan ID ini' : 'Company ID tidak ditemukan di TIGA' );
+        return false;
+      }
+
+      SetFieldStatus( 'companyStatus', 'ok', '✓ Ada di TIGA : ' + ( ReadProperty( companies[0], fields.Name ) || companyId ) );
+      return true;
+    }
+    catch( error )
+    {
+      SetFieldStatus( 'companyStatus', 'err', error.message );
+      return false;
+    }
+  }
+
+  // ---------- warehouse ----------
+
+  async function ValidateWarehouse()
+  {
+    const companyId = $( 'companyId' ).value.trim();
+    const warehouseName = $( 'warehouseName' ).value.trim();
+    _state.Warehouse = null;
+
+    if( !companyId || !warehouseName )
+    {
+      SetFieldStatus( 'warehouseStatus', 'err', 'Company ID dan Warehouse wajib diisi' );
+      return false;
+    }
+
+    // Warehouses table : company ID is "<company id>" and Name is "<warehouse>", found = ok
+    const fields = CONFIG.Entity.Warehouses.Fields;
+    const filter = FieldIs( fields.CompanyID, companyId ) + ' and ' + FieldIs( fields.Name, warehouseName );
+
+    try
+    {
+      const warehouses = await Retrieve( 'Cek warehouse', CONFIG.Entity.Warehouses.Name, filter, [ fields.Name, fields.CompanyID ] );
+
+      if( warehouses.length !== 1 )
+      {
+        SetFieldStatus( 'warehouseStatus', 'err', warehouses.length ? 'Ada lebih dari satu warehouse dengan nama ini untuk company ' + companyId : 'Warehouse ' + warehouseName + ' tidak ditemukan di TIGA untuk company ' + companyId );
+        return false;
+      }
+
+      _state.Warehouse = { ID : warehouses[0].ID, Name : ReadProperty( warehouses[0], fields.Name ) };
+      SetFieldStatus( 'warehouseStatus', 'ok', '✓ Ada di TIGA' );
+      return true;
+    }
+    catch( error )
+    {
+      SetFieldStatus( 'warehouseStatus', 'err', error.message );
+      return false;
+    }
+  }
+
+  // ---------- items ----------
+  async function AddRow()
+  {
+    const itemId = $( 'newItemId' ).value.trim();
+    const bin = $( 'newBin' ).value.trim();
+    const quantity = parseFloat( $( 'newQty' ).value );
+    const adjustmentNotes = $( 'newNote' ).value.trim();
+
+    if( !itemId ) { SetFieldStatus( 'addStatus', 'err', 'Item ID wajib diisi' ); return; }
+    if( _state.Action === 'MoveIn' && GetMoveOutItemIds().indexOf( itemId ) < 0 )
+    {
+      SetFieldStatus( 'addStatus', 'err', 'Item ID ' + itemId + ' tidak ada di Move Out. Item yang di-Move In harus sama dengan yang di-Move Out.' );
+      return;
+    }
+    if( !bin ) { SetFieldStatus( 'addStatus', 'err', 'Bin wajib diisi (tidak ada default bin)' ); return; }
+    if( isNaN( quantity ) || quantity <= 0 ) { SetFieldStatus( 'addStatus', 'err', 'Qty harus angka lebih dari 0' ); return; }
+
+    const row = { ItemID : itemId, StorageName : bin, Quantity : quantity, AdjustmentNotes : adjustmentNotes, Description : '', UoM : '', Stock : null, Level : 'pending', Message : 'Mengecek ke TIGA…' };
+    _state.Rows.push( row );
+    SetStatus( 'DRAFT' );
+    $( 'newItemId' ).value = ''; $( 'newBin' ).value = ''; $( 'newQty' ).value = ''; $( 'newNote' ).value = '';
+    SetFieldStatus( 'addStatus', '', '' );
+    RenderRows();
+
+    await ValidateRows( [ row ] );
+  }
+
+  function RemoveRow( index )
+  {
+    _state.Rows.splice( index, 1 );
+    SetStatus( 'DRAFT' );
+    RenderRows();
+  }
+
+  // bulk check against TIGA : one chunked search for items, one for stock / bins ( never one retrieve per row )
+  async function ValidateRows( rows )
+  {
+    rows = rows || _state.Rows;
+    if( !rows.length ) return true;
+
+    if( !_state.Session.IsLoggedIn )
+    {
+      rows.forEach( function ( row ) { row.Level = 'error'; row.Message = 'Login ke TIGA dulu'; } );
+      RenderRows();
+      return false;
+    }
+
+    if( !_state.Warehouse && !( await ValidateWarehouse() ) )
+    {
+      rows.forEach( function ( row ) { row.Level = 'error'; row.Message = 'Warehouse belum valid'; } );
+      RenderRows();
+      return false;
+    }
+
+    rows.forEach( function ( row ) { row.Level = 'pending'; row.Message = 'Mengecek ke TIGA…'; } );
+    RenderRows();
+
+    try
+    {
+      const itemIds = Unique( rows.map( function ( row ) { return row.ItemID; } ) );
+      const itemFields = CONFIG.Entity.Items.Fields;
+      const items = await RetrieveChunked( 'Cek item', CONFIG.Entity.Items.Name, '', itemIds.map( function ( id ) { return FieldIs( itemFields.ItemID, id ); } ),
+        [ itemFields.ItemID, itemFields.Description, itemFields.PurchaseType, itemFields.UoM ] );
+
+      let itemMap = {};
+      items.forEach( function ( item ) { itemMap[ ReadProperty( item, itemFields.ItemID ) ] = item; } );
+
+      // Move Out : the item must have stock in that bin. Move In : stock is shown, and the bin is checked in Storages
+      const stockMap = await RetrieveStockMap( rows );
+      const binMap = _state.Action === 'MoveIn' ? await RetrieveBinMap( rows ) : {};
+      const moveOutItemIds = GetMoveOutItemIds();
+
+      // same rule as TIGA consolidation : same item + same bin is summed before comparing with stock
+      let requestedMap = {};
+      _state.Rows.forEach( function ( row ) { const key = StockKey( row.ItemID, row.StorageName ); requestedMap[ key ] = ( requestedMap[ key ] || 0 ) + row.Quantity; } );
+
+      rows.forEach( function ( row )
+      {
+        const item = itemMap[ row.ItemID ];
+        row.Stock = null;
+
+        if( !item )
+        {
+          row.Level = 'error'; row.Description = ''; row.UoM = '';
+          row.Message = 'Item ID tidak ditemukan di TIGA';
+          return;
+        }
+
+        row.Description = ReadProperty( item, itemFields.Description ) || '';
+        row.UoM = ReadProperty( item, itemFields.UoM ) || '';
+
+        if( ReadProperty( item, itemFields.PurchaseType ) === CONFIG.PurchaseTypeService )
+        {
+          row.Level = 'error'; row.Message = 'Item dengan purchase type Service tidak bisa dipakai';
+          return;
+        }
+
+        const key = StockKey( row.ItemID, row.StorageName );
+
+        if( _state.Action === 'MoveOut' )
+        {
+          if( !( key in stockMap ) )
+          {
+            row.Level = 'error'; row.Message = 'Item tidak ada di bin ' + row.StorageName + ' (tidak ada stok)';
+            return;
+          }
+
+          row.Stock = stockMap[ key ];
+          if( requestedMap[ key ] > row.Stock )
+          {
+            row.Level = 'error'; row.Message = 'Qty keluar (' + requestedMap[ key ] + ') melebihi stok bin (' + row.Stock + ')';
+            return;
+          }
+
+          row.Level = 'ok'; row.Message = '✓ Item & stok bin cocok dengan TIGA';
+        }
+        else
+        {
+          if( moveOutItemIds.indexOf( row.ItemID ) < 0 )
+          {
+            row.Level = 'error'; row.Message = 'Item ini tidak ada di Move Out';
+            return;
+          }
+
+          row.Stock = ( key in stockMap ) ? stockMap[ key ] : 0;
+          const isExistingBin = !!binMap[ row.StorageName.toLowerCase() ];
+          row.Level = isExistingBin ? 'ok' : 'warn';
+          row.Message = isExistingBin ? '✓ Item & bin ada di TIGA (stok bin sekarang ' + row.Stock + ')' : 'Bin ' + row.StorageName + ' belum ada di warehouse ini, akan dibuat otomatis oleh TIGA';
+        }
+      } );
+    }
+    catch( error )
+    {
+      rows.forEach( function ( row ) { row.Level = 'error'; row.Message = error.message; } );
+    }
+
+    RenderRows();
+    return rows.every( function ( row ) { return row.Level === 'ok' || row.Level === 'warn'; } );
+  }
+
+  // TIGA bin lookup ( "is" filter ) is case-insensitive, so the key is lower case too
+  function StockKey( itemId, binName )
+  {
+    return itemId + '|' + String( binName ).toLowerCase();
+  }
+
+  // StorageInventories : Warehouse Name is <warehouse field> and ( ( ItemID is <item> and Bin is <bin of that row> ) or ... )
+  async function RetrieveStockMap( rows )
+  {
+    const fields = CONFIG.Entity.StorageInventories.Fields;
+    const warehouseFilter = FieldIs( fields.WarehouseName, $( 'warehouseName' ).value.trim() );
+    const itemBinFilters = Unique( rows.map( function ( row )
+    {
+      return '(' + FieldIs( fields.ItemID, row.ItemID ) + ' and ' + FieldIs( fields.StorageName, row.StorageName ) + ')';
+    } ) );
+
+    const stocks = await RetrieveChunked( 'Cek stok bin', CONFIG.Entity.StorageInventories.Name, warehouseFilter,
+      itemBinFilters, [ fields.ItemID, fields.StorageName, fields.WarehouseName, fields.Quantity ] );
+
+    let stockMap = {};
+    stocks.forEach( function ( stock )
+    {
+      const key = StockKey( ReadProperty( stock, fields.ItemID ), ReadProperty( stock, fields.StorageName ) );
+      stockMap[ key ] = ( stockMap[ key ] || 0 ) + ( parseFloat( ReadProperty( stock, fields.Quantity ) ) || 0 );
+    } );
+    return stockMap;
+  }
+
+  // Storages : Warehouse Name is <warehouse field> and ( Name is <bin> or ... )
+  async function RetrieveBinMap( rows )
+  {
+    const fields = CONFIG.Entity.Storages.Fields;
+    const binNames = Unique( rows.map( function ( row ) { return row.StorageName; } ) );
+    const storages = await RetrieveChunked( 'Cek bin', CONFIG.Entity.Storages.Name, FieldIs( fields.WarehouseName, $( 'warehouseName' ).value.trim() ),
+      binNames.map( function ( name ) { return FieldIs( fields.Name, name ); } ), [ fields.Name, fields.WarehouseName ] );
+
+    let binMap = {};
+    storages.forEach( function ( storage ) { binMap[ String( ReadProperty( storage, fields.Name ) ).toLowerCase() ] = true; } );
+    return binMap;
+  }
+
+  // ---------- payload / submit ----------
+  function BuildPayload()
+  {
+    const shipmentHeader = $( 'shipmentHeader' ).value.trim();
+    const isMoveIn = _state.Action === 'MoveIn';
+
+    let payload = {
+      CompanyID : $( 'companyId' ).value.trim(),
+      WarehouseName : $( 'warehouseName' ).value.trim(),
+      // Move Out sends the shipment header as its own field, Move In uses it as the Notes
+      ShipmentHeader : isMoveIn ? undefined : ( shipmentHeader || undefined ),
+      Notes : isMoveIn ? ( shipmentHeader || undefined ) : ( $( 'notes' ).value.trim() || undefined ),
+      Items : _state.Rows.map( function ( row )
+      {
+        return { ItemID : row.ItemID, Quantity : row.Quantity, StorageName : row.StorageName, AdjustmentNotes : row.AdjustmentNotes || undefined };
+      } )
+    };
+    return JSON.parse( JSON.stringify( payload ) ); // drops undefined fields
+  }
+
+  function ShowPayload()
+  {
+    $( 'payloadTitle' ).textContent = 'POST ' + window.location.origin + CONFIG.ExternalApiPath + CONFIG.Action[ _state.Action ].ApiAction;
+    $( 'payloadText' ).textContent = JSON.stringify( BuildPayload(), null, 2 );
+    $( 'payloadModal' ).classList.add( 'open' );
+  }
+
+  async function Submit()
+  {
+    const actionConfig = CONFIG.Action[ _state.Action ];
+
+    if( !( await ValidateWarehouse() ) || !( await ValidateRows() ) )
+    {
+      ShowResult( false, 'Masih ada data yang tidak cocok dengan TIGA. Perbaiki baris berwarna merah dulu.' );
+      return;
+    }
+
+    if( !confirm( 'Kirim ' + actionConfig.Label + ' (' + _state.Rows.length + ' baris) ke TIGA sungguhan?\nTransaksi akan benar-benar dibuat dan stok berubah.' ) ) return;
+
+    $( 'btnSubmit' ).disabled = true;
+    try
+    {
+      const response = await CallTiga( 'Submit ' + actionConfig.Label, CONFIG.ExternalApiPath + actionConfig.ApiAction, BuildPayload() );
+      SetStatus( 'TERKIRIM' );
+      ShowResult( true, 'Berhasil dibuat di TIGA\n' +
+        'Transaction ID : ' + ( response && response.TransactionID || '-' ) + '\n' +
+        'Sequence ID    : ' + ( response && response.SequenceID || '-' ) + '\n' +
+        'Warehouse      : ' + ( response && response.WarehouseName || '-' ) + '\n' +
+        'Jumlah baris   : ' + ( response && response.Items ? response.Items.length : '-' ) );
+      // refresh stock after the transaction
+      await ValidateRows();
+    }
+    catch( error )
+    {
+      SetStatus( 'GAGAL' );
+      ShowResult( false, 'TIGA menolak : ' + error.message );
+    }
+    finally
+    {
+      RefreshButtons();
+    }
+  }
+
+  function ShowResult( isOk, text )
+  {
+    $( 'resultBox' ).className = 'result ' + ( isOk ? 'ok' : 'err' );
+    $( 'resultBox' ).textContent = text;
+  }
+
+  function SetStatus( status )
+  {
+    _state.Status = status;
+    $( 'statusText' ).value = status;
+    $( 'statusBadge' ).textContent = status;
+    $( 'statusBadge' ).className = 'badge ' + ( status === 'TERKIRIM' ? 'b-sent' : status === 'GAGAL' ? 'b-fail' : 'b-draft' );
+  }
+
+  // ---------- render ----------
+  function RenderRows()
+  {
+    const tbody = $( 'itemRows' );
+    tbody.innerHTML = '';
+
+    if( !_state.Rows.length )
+    {
+      tbody.innerHTML = '<tr><td colspan="8" class="hint">Belum ada item. Tambahkan di bawah.</td></tr>';
+    }
+
+    _state.Rows.forEach( function ( row, index )
+    {
+      const tr = document.createElement( 'tr' );
+      tr.className = row.Level === 'error' ? 'r-error' : row.Level === 'warn' ? 'r-warn' : '';
+
+      const cells = [
+        { text : String( index + 1 ) },
+        { text : row.ItemID, css : 'mono' },
+        { text : row.Description, message : row },
+        { text : row.StorageName },
+        { text : row.Stock == null ? '-' : String( row.Stock ), css : 'num' },
+        { text : String( row.Quantity ), css : 'num', bold : true },
+        { text : row.UoM }
+      ];
+
+      cells.forEach( function ( cell )
+      {
+        const td = document.createElement( 'td' );
+        if( cell.css ) td.className = cell.css;
+        const content = document.createElement( cell.bold ? 'b' : 'span' );
+        content.textContent = cell.text || '';
+        td.append( content );
+
+        if( cell.message )
+        {
+          const message = document.createElement( 'div' );
+          message.className = 'row-msg s-' + ( { ok : 'ok', warn : 'warn', error : 'err', pending : 'info' }[ row.Level ] || 'info' );
+          message.textContent = row.Message || '';
+          td.append( message );
+        }
+        tr.append( td );
+      } );
+
+      const actionCell = document.createElement( 'td' );
+      const removeButton = document.createElement( 'button' );
+      removeButton.className = 'btn-link';
+      removeButton.title = 'Hapus baris';
+      removeButton.textContent = '✕';
+      removeButton.addEventListener( 'click', function () { RemoveRow( index ); } );
+      actionCell.append( removeButton );
+      tr.append( actionCell );
+
+      tbody.append( tr );
+    } );
+
+    const totalQty = _state.Rows.reduce( function ( sum, row ) { return sum + row.Quantity; }, 0 );
+    $( 'summaryText' ).textContent = _state.Rows.length + ' item · total qty ' + Math.round( totalQty * 1e7 ) / 1e7;
+    $( 'itemCount' ).value = _state.Rows.length + ' baris';
+    RefreshButtons();
+  }
+
+  function RefreshButtons()
+  {
+    const hasError = _state.Rows.some( function ( row ) { return row.Level === 'error' || row.Level === 'pending'; } );
+    $( 'btnSubmit' ).disabled = !_state.Session.IsLoggedIn || !_state.Rows.length || hasError;
+    $( 'btnSubmit' ).title = !_state.Session.IsLoggedIn ? 'Login ke TIGA dulu' : !_state.Rows.length ? 'Tambahkan item dulu' : hasError ? 'Perbaiki baris yang error' : '';
+  }
+
+  function SwitchAction( action )
+  {
+    _state.WarehouseNameByAction[ _state.Action ] = $( 'warehouseName' ).value.trim();
+    _state.Action = action;
+    const actionConfig = CONFIG.Action[ action ];
+    const otherAction = action === 'MoveOut' ? 'MoveIn' : 'MoveOut';
+
+    document.querySelectorAll( '.tab' ).forEach( function ( tab ) { tab.classList.toggle( 'active', tab.dataset.action === action ); } );
+    $( 'crumbAction' ).textContent = actionConfig.Label;
+    $( 'legendAction' ).textContent = actionConfig.Label;
+    $( 'transactionType' ).value = actionConfig.TransactionType;
+    $( 'thQty' ).textContent = actionConfig.QtyLabel;
+    $( 'btnSubmit' ).innerHTML = actionConfig.SubmitLabel;
+    $( 'btnSwitchTab' ).innerHTML = ( action === 'MoveOut' ? 'Lanjut ke ' : '&#8592; ' ) + CONFIG.Action[ otherAction ].Label + ( action === 'MoveOut' ? ' &#8594;' : '' );
+    $( 'resultBox' ).className = 'result';
+    ApplyHeaderMode( action );
+    SetStatus( _state.Status );
+    RenderRows();
+
+    // the warehouse can differ per tab, so check it again for this tab
+    _state.Warehouse = null;
+    SetFieldStatus( 'warehouseStatus', '', '' );
+    if( _state.Session.IsLoggedIn && $( 'warehouseName' ).value.trim() )
+    {
+      ValidateWarehouse().then( function () { if( _state.Rows.length ) ValidateRows(); } );
+    }
+  }
+
+  // Move In reuses the header of Move Out ( Company, Shipment Header ) : read only, Notes = Shipment Header.
+  // the Move In warehouse can be changed : it starts with the Move Out warehouse
+  function ApplyHeaderMode( action )
+  {
+    const isMoveIn = action === 'MoveIn';
+    const isComingFromMoveOut = !$( 'notes' ).readOnly;
+
+    [ 'shipmentHeader', 'companyId', 'notes' ].forEach( function ( id ) { $( id ).readOnly = isMoveIn; } );
+
+    if( isMoveIn && !_state.WarehouseNameByAction.MoveIn )
+    {
+      _state.WarehouseNameByAction.MoveIn = _state.WarehouseNameByAction.MoveOut;
+    }
+    $( 'warehouseName' ).value = _state.WarehouseNameByAction[ action ];
+
+    if( isMoveIn )
+    {
+      if( isComingFromMoveOut ) _state.MoveOutNotes = $( 'notes' ).value;
+      $( 'notes' ).value = $( 'shipmentHeader' ).value;
+      $( 'notesHint' ).textContent = 'Notes Move In = Shipment Header. Company & Shipment Header diambil dari tab Move Out, Warehouse tujuan boleh diganti.';
+    }
+    else
+    {
+      $( 'notes' ).value = _state.MoveOutNotes;
+      $( 'notesHint' ).textContent = '';
+    }
+
+    // Item ID suggestions for Move In : only the items of Move Out
+    const datalist = $( 'itemHintList' );
+    datalist.innerHTML = '';
+    if( isMoveIn )
+    {
+      _state.RowsByAction.MoveOut.forEach( function ( row )
+      {
+        const option = document.createElement( 'option' );
+        option.value = row.ItemID;
+        option.label = row.Description || '';
+        datalist.append( option );
+      } );
+    }
+
+    SetFieldStatus( 'addStatus', isMoveIn && !_state.RowsByAction.MoveOut.length ? 'warn' : '', isMoveIn && !_state.RowsByAction.MoveOut.length ? 'Belum ada item di tab Move Out. Isi Move Out dulu.' : '' );
+  }
+
+  function Reset()
+  {
+    [ 'shipmentHeader', 'companyId', 'warehouseName', 'notes', 'newItemId', 'newBin', 'newQty', 'newNote' ].forEach( function ( id ) { $( id ).value = ''; } );
+    [ 'companyStatus', 'warehouseStatus', 'addStatus' ].forEach( function ( id ) { SetFieldStatus( id, '', '' ); } );
+    _state.Warehouse = null;
+    _state.RowsByAction = { MoveOut : [], MoveIn : [] };
+    _state.StatusByAction = { MoveOut : 'DRAFT', MoveIn : 'DRAFT' };
+    _state.MoveOutNotes = '';
+    _state.WarehouseNameByAction = { MoveOut : '', MoveIn : '' };
+    SwitchAction( 'MoveOut' );
+  }
+
+  // ---------- guided demo : walks through the steps, never submits by itself ----------
+  async function PlayDemo()
+  {
+    const banner = $( 'demoBanner' );
+
+    async function Step( text, elementId )
+    {
+      banner.textContent = text;
+      banner.classList.add( 'open' );
+      const element = elementId && $( elementId );
+      if( element )
+      {
+        element.scrollIntoView( { behavior : 'smooth', block : 'center' } );
+        element.classList.remove( 'spot' ); void element.offsetWidth; element.classList.add( 'spot' );
+      }
+      await Sleep( CONFIG.DemoStepDelayMs );
+    }
+
+    $( 'btnPlayDemo' ).disabled = true;
+    try
+    {
+      await Step( '1. Protrax login ke TIGA (GetAuthorization), session disimpan di backend', 'boxConnection' );
+      if( !_state.Session.IsLoggedIn ) { await Step( 'Silakan login dulu, lalu klik Putar Demo lagi', 'loginForm' ); return; }
+
+      await Step( '2. Cek Company & Warehouse ke data TIGA', 'boxTransaction' );
+      if( !( await ValidateCompany() ) ) { await Step( 'Company ID belum ada di TIGA (tabel Companies), isi dulu', 'companyId' ); return; }
+      if( !( await ValidateWarehouse() ) ) { await Step( 'Warehouse belum cocok dengan TIGA, isi Company ID & Warehouse dulu', 'warehouseName' ); return; }
+
+      if( !_state.Rows.length ) { await Step( 'Tambahkan item (Item ID, Bin, Qty), lalu klik Putar Demo lagi', 'boxAddRow' ); return; }
+      await Step( '3. Semua item dicek sekaligus ke TIGA (1 retrieve, bukan per item)', 'itemRows' );
+      const isValid = await ValidateRows();
+      if( !isValid ) { await Step( 'Ada baris yang tidak cocok dengan TIGA (merah), perbaiki dulu', 'itemRows' ); return; }
+
+      await Step( '4. Ini payload yang dikirim Protrax ke TIGA', 'btnPayload' );
+      ShowPayload();
+      await Sleep( CONFIG.DemoStepDelayMs * 2 );
+      $( 'payloadModal' ).classList.remove( 'open' );
+
+      await Step( '5. Klik Submit untuk membuat transaksi sungguhan di TIGA', 'btnSubmit' );
+    }
+    finally
+    {
+      setTimeout( function () { banner.classList.remove( 'open' ); }, CONFIG.DemoStepDelayMs );
+      $( 'btnPlayDemo' ).disabled = false;
+    }
+  }
+
+  // ---------- events ----------
+  $( 'btnLogin' ).addEventListener( 'click', Login );
+  $( 'password' ).addEventListener( 'keydown', function ( event ) { if( event.key === 'Enter' ) Login(); } );
+  $( 'btnLogout' ).addEventListener( 'click', Logout );
+  $( 'companyId' ).addEventListener( 'change', function ()
+  {
+    _state.Warehouse = null;
+    SetFieldStatus( 'warehouseStatus', '', '' );
+    ValidateCompany().then( function ( isValid ) { if( isValid && $( 'warehouseName' ).value.trim() ) ValidateWarehouse(); } );
+  } );
+  $( 'warehouseName' ).addEventListener( 'change', function () { if( _state.Session.IsLoggedIn ) ValidateWarehouse().then( function () { if( _state.Rows.length ) ValidateRows(); } ); } );
+  $( 'newQty' ).addEventListener( 'keydown', function ( event ) { if( event.key === 'Enter' ) AddRow(); } );
+  $( 'btnAddRow' ).addEventListener( 'click', AddRow );
+  $( 'btnValidate' ).addEventListener( 'click', function () { ValidateRows(); } );
+  $( 'btnPayload' ).addEventListener( 'click', ShowPayload );
+  $( 'btnClosePayload' ).addEventListener( 'click', function () { $( 'payloadModal' ).classList.remove( 'open' ); } );
+  $( 'payloadModal' ).addEventListener( 'click', function ( event ) { if( event.target === $( 'payloadModal' ) ) $( 'payloadModal' ).classList.remove( 'open' ); } );
+  $( 'btnCopyPayload' ).addEventListener( 'click', function () { navigator.clipboard && navigator.clipboard.writeText( $( 'payloadText' ).textContent ); } );
+  $( 'btnSubmit' ).addEventListener( 'click', Submit );
+  $( 'btnSwitchTab' ).addEventListener( 'click', function () { SwitchAction( _state.Action === 'MoveOut' ? 'MoveIn' : 'MoveOut' ); } );
+  document.querySelectorAll( '.tab' ).forEach( function ( tab ) { tab.addEventListener( 'click', function () { SwitchAction( tab.dataset.action ); } ); } );
+  $( 'btnReset' ).addEventListener( 'click', Reset );
+  $( 'btnPlayDemo' ).addEventListener( 'click', PlayDemo );
+
+  // ---------- init ----------
+  SwitchAction( 'MoveOut' );
+  RenderRows();
+  fetch( '/api/session' ).then( function ( r ) { return r.json(); } ).then( SetSession ).catch( function () { SetSession( { IsLoggedIn : false } ); } );
+} )();
+</script>
+</body>
+</html>
